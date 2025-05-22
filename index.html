@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dépenses Ruben</title>
+  <title>Dépenses</title>
   <style>
     :root {
       --bg: #121212;
@@ -12,11 +12,10 @@
       --text: #ffffff;
       --accent: #00c896;
       --border: #333;
-      --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
     }
 
     body {
-      font-family: var(--font-main);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
       background: var(--bg);
       color: var(--text);
       padding: 20px;
@@ -24,18 +23,21 @@
       margin: auto;
     }
 
-    header {
-      text-align: left;
-      font-size: 0.9em;
-      color: #aaa;
-      margin-bottom: 5px;
+    .top-bar {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      font-size: 1em;
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 10px;
     }
 
     h1 {
       text-align: center;
-      font-size: 1.7em;
+      font-size: 1.8em;
       color: var(--accent);
-      margin: 0 0 10px 0;
+      margin: 10px 0 20px;
     }
 
     input, select, button {
@@ -63,19 +65,20 @@
       background: #00dfa2;
     }
 
-    .entry {
-      padding: 10px 14px;
-      background: var(--card);
-      border: 1px solid var(--border);
+    .entry-wrapper {
+      position: relative;
+      overflow: hidden;
       margin-bottom: 10px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
     }
 
-    .amount-desc {
-      font-weight: bold;
-      font-size: 1.1em;
+    .entry {
+      background: var(--card);
+      padding: 14px;
+      border-radius: 8px;
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
     }
 
     .meta {
@@ -84,13 +87,22 @@
     }
 
     .delete-btn {
-      color: #f55;
-      background: none;
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      background: #ff3b30;
+      color: white;
+      font-weight: bold;
       border: none;
-      cursor: pointer;
-      font-size: 0.85em;
-      margin-top: 4px;
-      align-self: flex-end;
+      outline: none;
+      text-align: center;
+      padding: 0;
+      font-size: 0.9em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     #total {
@@ -103,7 +115,7 @@
   </style>
 </head>
 <body>
-  <header>Dépenses Ruben</header>
+  <div class="top-bar">Dépenses</div>
   <h1>PayTrack IL</h1>
 
   <input type="number" id="amount" placeholder="Montant">
@@ -119,28 +131,58 @@
 
   <script>
     const euroToShekel = 4.0;
-    const saveData = () => localStorage.setItem("entries", JSON.stringify(entries));
-    const loadData = () => JSON.parse(localStorage.getItem("entries") || "[]");
+    let entries = JSON.parse(localStorage.getItem("entries") || "[]");
 
-    let entries = loadData();
+    const saveData = () => localStorage.setItem("entries", JSON.stringify(entries));
 
     const updateDisplay = () => {
       const container = document.getElementById("entries");
       container.innerHTML = "";
       let total = 0;
+
       entries.forEach((entry, index) => {
-        const div = document.createElement("div");
-        div.className = "entry";
-        div.innerHTML = `
-          <div class="amount-desc">${entry.amount.toFixed(2)} ₪ - ${entry.desc}</div>
+        const wrapper = document.createElement("div");
+        wrapper.className = "entry-wrapper";
+
+        const content = document.createElement("div");
+        content.className = "entry";
+        content.innerHTML = `
+          <div><strong>${entry.amount.toFixed(2)} ₪</strong> - ${entry.desc}</div>
           <div class="meta">🕒 ${entry.date}</div>
-          <button class="delete-btn" onclick="deleteEntry(${index})">🗑 Supprimer</button>
         `;
-        container.appendChild(div);
+
+        let startX = 0;
+        content.addEventListener("touchstart", e => startX = e.touches[0].clientX);
+        content.addEventListener("touchmove", e => {
+          const moveX = e.touches[0].clientX;
+          const diff = startX - moveX;
+          if (diff > 30) {
+            content.style.transform = "translateX(-80px)";
+          }
+          if (diff < -30) {
+            content.style.transform = "translateX(0)";
+          }
+        });
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-btn";
+        delBtn.innerText = "🗑 Suppr.";
+        delBtn.onclick = () => {
+          if (confirm("Supprimer cette dépense ?")) {
+            entries.splice(index, 1);
+            saveData();
+            updateDisplay();
+          }
+        };
+
+        wrapper.appendChild(content);
+        wrapper.appendChild(delBtn);
+        container.appendChild(wrapper);
         total += entry.amount;
       });
+
       document.getElementById("total").innerText = `Total du mois : ₪ ${total.toFixed(2)}`;
-    }
+    };
 
     const addEntry = () => {
       const amount = parseFloat(document.getElementById("amount").value);
@@ -151,17 +193,11 @@
       const shekelAmount = currency === "EUR" ? amount * euroToShekel : amount;
       const date = new Date().toLocaleString("fr-FR", { hour12: false });
       entries.push({ amount: shekelAmount, desc, date });
-      saveData(); updateDisplay();
+      saveData();
+      updateDisplay();
       document.getElementById("amount").value = "";
       document.getElementById("desc").value = "";
-    }
-
-    const deleteEntry = (index) => {
-      if (confirm("Supprimer cette dépense ?")) {
-        entries.splice(index, 1);
-        saveData(); updateDisplay();
-      }
-    }
+    };
 
     updateDisplay();
   </script>
