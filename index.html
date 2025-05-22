@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayTrack IL</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #ffffff;
+      --accent: #00c896;
+      --border: #333;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
+      background: var(--bg);
+      color: var(--text);
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      padding: 12px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1em;
+    }
+
+    button {
+      background: var(--accent);
+      color: #000;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #00dfa2;
+    }
+
+    .entry {
+      padding: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      border-radius: 8px;
+    }
+
+    #total {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.3em;
+      color: var(--accent);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>PayTrack IL</h1>
+  <input type="number" id="amount" placeholder="Montant">
+  <select id="currency">
+    <option value="ILS">₪ Shekel</option>
+    <option value="EUR">€ Euro</option>
+  </select>
+  <input type="text" id="desc" placeholder="Description (optionnel)">
+  <button onclick="addEntry()">Ajouter</button>
+
+  <div id="entries"></div>
+  <div id="total"></div>
+
+  <script>
+    const euroToShekel = 4.0; // taux fixe
+
+    const saveData = () => {
+      localStorage.setItem("entries", JSON.stringify(entries));
+    }
+
+    const loadData = () => {
+      const data = localStorage.getItem("entries");
+      return data ? JSON.parse(data) : [];
+    }
+
+    let entries = loadData();
+
+    const updateDisplay = () => {
+      const container = document.getElementById("entries");
+      container.innerHTML = "";
+      let total = 0;
+      for (const entry of entries) {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.innerText = `${entry.amount.toFixed(2)} ₪ - ${entry.desc}`;
+        container.appendChild(div);
+        total += entry.amount;
+      }
+      document.getElementById("total").innerText = `Total du mois : ₪ ${total.toFixed(2)}`;
+    }
+
+    const addEntry = () => {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const currency = document.getElementById("currency").value;
+      const desc = document.getElementById("desc").value || "Sans description";
+
+      if (isNaN(amount) || amount <= 0) {
+        alert("Montant invalide");
+        return;
+      }
+
+      const shekelAmount = currency === "EUR" ? amount * euroToShekel : amount;
+      entries.push({ amount: shekelAmount, desc });
+      saveData();
+      updateDisplay();
+      document.getElementById("amount").value = "";
+      document.getElementById("desc").value = "";
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
