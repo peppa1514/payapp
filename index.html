@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PayTrack IL</title>
+  <title>Dépenses Ruben</title>
   <style>
     :root {
       --bg: #121212;
@@ -12,10 +12,11 @@
       --text: #ffffff;
       --accent: #00c896;
       --border: #333;
+      --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
+      font-family: var(--font-main);
       background: var(--bg);
       color: var(--text);
       padding: 20px;
@@ -23,10 +24,18 @@
       margin: auto;
     }
 
+    header {
+      text-align: left;
+      font-size: 0.9em;
+      color: #aaa;
+      margin-bottom: 5px;
+    }
+
     h1 {
       text-align: center;
+      font-size: 1.7em;
       color: var(--accent);
-      margin-bottom: 20px;
+      margin: 0 0 10px 0;
     }
 
     input, select, button {
@@ -55,11 +64,33 @@
     }
 
     .entry {
-      padding: 12px;
+      padding: 10px 14px;
       background: var(--card);
       border: 1px solid var(--border);
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .amount-desc {
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .meta {
+      font-size: 0.85em;
+      color: #bbb;
+    }
+
+    .delete-btn {
+      color: #f55;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85em;
+      margin-top: 4px;
+      align-self: flex-end;
     }
 
     #total {
@@ -72,7 +103,9 @@
   </style>
 </head>
 <body>
+  <header>Dépenses Ruben</header>
   <h1>PayTrack IL</h1>
+
   <input type="number" id="amount" placeholder="Montant">
   <select id="currency">
     <option value="ILS">₪ Shekel</option>
@@ -86,15 +119,8 @@
 
   <script>
     const euroToShekel = 4.0;
-
-    const saveData = () => {
-      localStorage.setItem("entries", JSON.stringify(entries));
-    }
-
-    const loadData = () => {
-      const data = localStorage.getItem("entries");
-      return data ? JSON.parse(data) : [];
-    }
+    const saveData = () => localStorage.setItem("entries", JSON.stringify(entries));
+    const loadData = () => JSON.parse(localStorage.getItem("entries") || "[]");
 
     let entries = loadData();
 
@@ -102,13 +128,17 @@
       const container = document.getElementById("entries");
       container.innerHTML = "";
       let total = 0;
-      for (const entry of entries) {
+      entries.forEach((entry, index) => {
         const div = document.createElement("div");
         div.className = "entry";
-        div.innerText = `${entry.amount.toFixed(2)} ₪ - ${entry.desc}`;
+        div.innerHTML = `
+          <div class="amount-desc">${entry.amount.toFixed(2)} ₪ - ${entry.desc}</div>
+          <div class="meta">🕒 ${entry.date}</div>
+          <button class="delete-btn" onclick="deleteEntry(${index})">🗑 Supprimer</button>
+        `;
         container.appendChild(div);
         total += entry.amount;
-      }
+      });
       document.getElementById("total").innerText = `Total du mois : ₪ ${total.toFixed(2)}`;
     }
 
@@ -116,18 +146,21 @@
       const amount = parseFloat(document.getElementById("amount").value);
       const currency = document.getElementById("currency").value;
       const desc = document.getElementById("desc").value || "Sans description";
-
-      if (isNaN(amount) || amount <= 0) {
-        alert("Montant invalide");
-        return;
-      }
+      if (isNaN(amount) || amount <= 0) return alert("Montant invalide");
 
       const shekelAmount = currency === "EUR" ? amount * euroToShekel : amount;
-      entries.push({ amount: shekelAmount, desc });
-      saveData();
-      updateDisplay();
+      const date = new Date().toLocaleString("fr-FR", { hour12: false });
+      entries.push({ amount: shekelAmount, desc, date });
+      saveData(); updateDisplay();
       document.getElementById("amount").value = "";
       document.getElementById("desc").value = "";
+    }
+
+    const deleteEntry = (index) => {
+      if (confirm("Supprimer cette dépense ?")) {
+        entries.splice(index, 1);
+        saveData(); updateDisplay();
+      }
     }
 
     updateDisplay();
