@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PayTrack IL</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    h1 { text-align: center; }
+    input, select, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .entry {
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      border-radius: 5px;
+    }
+    #total {
+      margin-top: 20px;
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>PayTrack IL</h1>
+  <input type="number" id="amount" placeholder="Montant">
+  <select id="currency">
+    <option value="ILS">₪ Shekel</option>
+    <option value="EUR">€ Euro</option>
+  </select>
+  <input type="text" id="desc" placeholder="Description (optionnel)">
+  <button onclick="addEntry()">Ajouter</button>
+
+  <div id="entries"></div>
+  <div id="total"></div>
+
+  <script>
+    const euroToShekel = 4.0; // taux fixe, on peut l'améliorer plus tard
+
+    const saveData = () => {
+      localStorage.setItem("entries", JSON.stringify(entries));
+    }
+
+    const loadData = () => {
+      const data = localStorage.getItem("entries");
+      return data ? JSON.parse(data) : [];
+    }
+
+    let entries = loadData();
+
+    const updateDisplay = () => {
+      const container = document.getElementById("entries");
+      container.innerHTML = "";
+      let total = 0;
+      for (const entry of entries) {
+        const div = document.createElement("div");
+        div.className = "entry";
+        div.innerText = `${entry.amount.toFixed(2)} ₪ - ${entry.desc}`;
+        container.appendChild(div);
+        total += entry.amount;
+      }
+      document.getElementById("total").innerText = `Total du mois : ₪ ${total.toFixed(2)}`;
+    }
+
+    const addEntry = () => {
+      const amount = parseFloat(document.getElementById("amount").value);
+      const currency = document.getElementById("currency").value;
+      const desc = document.getElementById("desc").value || "Sans description";
+
+      if (isNaN(amount) || amount <= 0) {
+        alert("Montant invalide");
+        return;
+      }
+
+      const shekelAmount = currency === "EUR" ? amount * euroToShekel : amount;
+      entries.push({ amount: shekelAmount, desc });
+      saveData();
+      updateDisplay();
+      document.getElementById("amount").value = "";
+      document.getElementById("desc").value = "";
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
